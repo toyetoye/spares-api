@@ -334,8 +334,15 @@ app.get('/api/indents', requireAuth, (req, res) => {
 
   // Filter by role
   if (u.role === 'vessel') indents = indents.filter(i => i.vessel_id === u.vessel || i.created_by === u.id);
-  if (u.role === 'supplier') indents = indents.filter(i => i.supplier_email?.toLowerCase() === u.email?.toLowerCase());
-  if (u.role === 'agent') indents = indents.filter(i => i.agent_email?.toLowerCase() === u.email?.toLowerCase());
+  if (u.role === 'supplier') indents = indents.filter(i =>
+    i.supplier_email?.toLowerCase() === u.email?.toLowerCase() &&
+    ['po_issued','acknowledged','ets_set','shipped','picked_up','in_transit','under_clearance','at_warehouse','delivered','received'].includes(i.status)
+  );
+  if (u.role === 'agent') indents = indents.filter(i =>
+    i.agent_email?.toLowerCase() === u.email?.toLowerCase() &&
+    ['shipped','picked_up','in_transit','under_clearance','at_warehouse','delivered','received'].includes(i.status)
+  );
+  // Closed orders — non-admin/procurement cannot edit (enforced client-side too)
 
   // Filter by vessel
   if (req.query.vessel_id) indents = indents.filter(i => i.vessel_id === req.query.vessel_id);
@@ -471,6 +478,120 @@ app.post('/api/indents/:id/documents', requireAuth, (req, res) => {
   indents[idx].updated_at = new Date().toISOString();
   DB.write('spares_indents.json', indents);
   res.json(doc);
+});
+
+
+// ═══════════════════════════════════════════════════════
+// SUPPLIERS
+// ═══════════════════════════════════════════════════════
+
+app.get('/api/suppliers', requireAuth, (req, res) => {
+  const suppliers = DB.read('spares_suppliers.json');
+  res.json(suppliers);
+});
+
+app.post('/api/suppliers', requireAuth, requireRole('admin','procurement'), (req, res) => {
+  const suppliers = DB.read('spares_suppliers.json');
+  const users     = DB.read('spares_users.json');
+  const { company_name, contact_person, email, phone, category, password } = req.body;
+  if (!company_name) return res.status(400).json({ error: 'Company name required' });
+
+  // Create portal login if email provided
+  let has_login = false;
+  if (email) {
+    if (!users.find(u => u.email?.toLowerCase() === email.toLowerCase())) {
+      const pwd = password || crypto.randomBytes(6).toString('hex');
+      users.push({
+        id: 'user_sup_' + Date.now().toString(36),
+        email, name: contact_person || company_name,
+        role: 'supplier', company: company_name,
+        password: pwd, created_at: new Date().toISOString(),
+      });
+      DB.write('spares_users.json', users);
+      has_login = true;
+    } else { has_login = true; }
+  }
+
+  const supplier = {
+    id: 'sup_' + Date.now().toString(36),
+    company_name, contact_person: contact_person||'', email: email||'',
+    phone: phone||'', category: category||'', has_login,
+    created_at: new Date().toISOString(),
+  };
+  suppliers.push(supplier);
+  DB.write('spares_suppliers.json', suppliers);
+  res.json(supplier);
+});
+
+app.put('/api/suppliers/:id', requireAuth, requireRole('admin','procurement'), (req, res) => {
+  const suppliers = DB.read('spares_suppliers.json');
+  const idx = suppliers.findIndex(s => s.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  suppliers[idx] = { ...suppliers[idx], ...req.body, id: suppliers[idx].id };
+  DB.write('spares_suppliers.json', suppliers);
+  res.json(suppliers[idx]);
+});
+
+app.delete('/api/suppliers/:id', requireAuth, requireRole('admin','procurement'), (req, res) => {
+  const suppliers = DB.read('spares_suppliers.json');
+  DB.write('spares_suppliers.json', suppliers.filter(s => s.id !== req.params.id));
+  res.json({ ok: true });
+});
+
+// ═══════════════════════════════════════════════════════
+// AGENTS
+// ═══════════════════════════════════════════════════════
+
+app.get('/api/agents', requireAuth, (req, res) => {
+  const agents = DB.read('spares_agents.json');
+  res.json(agents);
+});
+
+app.post('/api/agents', requireAuth, requireRole('admin','procurement'), (req, res) => {
+  const agents = DB.read('spares_agents.json');
+  const users  = DB.read('spares_users.json');
+  const { company_name, contact_person, email, phone, port, password } = req.body;
+  if (!company_name) return res.status(400).json({ error: 'Company name required' });
+
+  let has_login = false;
+  if (email) {
+    if (!users.find(u => u.email?.toLowerCase() === email.toLowerCase())) {
+      const pwd = password || crypto.randomBytes(6).toString('hex');
+      users.push({
+        id: 'user_agt_' + Date.now().toString(36),
+        email, name: contact_person || company_name,
+        role: 'agent', company: company_name,
+        password: pwd, created_at: new Date().toISOString(),
+      });
+      DB.write('spares_users.json', users);
+      has_login = true;
+    } else { has_login = true; }
+  }
+
+  const agent = {
+    id: 'agt_' + Date.now().toString(36),
+    company_name, contact_person: contact_person||'', email: email||'',
+    phone: phone||'', port: port||'', has_login,
+    created_at: new Date().toISOString(),
+  };
+  agents.push(agent);
+  DB.write('spares_agents.json', agents);
+  res.json(agent);
+});
+
+app.put('/api/agents/:id', requireAuth, requireRole('admin','procurement'), (req, res) => {
+  const agents = DB.read('spares_agents.json');
+  const idx = agents.findIndex(a => a.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  agents[idx] = { ...agents[idx], ...req.body, id: agents[idx].id };
+  DB.write('spares_agents.json', agents);
+  res.json(agents[idx]);
+});
+
+app.delete('/api/agents/:id', requireAuth, requireRole('admin','procurement'), (req, res) => {
+  const agents = DB.read('spares_agents.json');
+  DB.write('spares_agents.json', agents.filter(a => a.id !== req.params.id));
+  res.json({ ok: true });
 });
 
 // ── Stats / dashboard ──────────────────────────────────
