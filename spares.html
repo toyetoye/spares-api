@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORCAP — Spares Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Barlow+Condensed:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0d14; --surface:#111520; --surface2:#181e2e; --surface3:#1e2638;
+  --border:#1e2a40; --border-light:#2a3a58;
+  --text:#b8c8e0; --text-bright:#e8f0ff; --text-dim:#5a6e90;
+  --amber:#f5a623; --amber2:#f0a500; --amber-glow:rgba(245,166,35,.08); --amber-glow2:rgba(245,166,35,.15);
+  --green:#3db87a; --red:#e05252; --blue:#60a5fa; --purple:#a78bfa;
+  --mono:'IBM Plex Mono',monospace; --cond:'Barlow Condensed',sans-serif; --sans:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;height:100vh;overflow:hidden;}
+
+/* ── HEADER ── */
+.header{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-box{width:34px;height:34px;background:var(--amber-glow2);border:1px solid rgba(245,166,35,.4);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber);}
+.logo-title{font-family:var(--cond);font-size:18px;font-weight:900;color:var(--text-bright);letter-spacing:1px;}
+.logo-sub{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:2px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-pill{font-family:var(--mono);font-size:10px;color:var(--text-dim);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;}
+.role-badge{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:3px;text-transform:uppercase;}
+.role-vessel{background:rgba(96,165,250,.12);color:var(--blue);}
+.role-superintendent{background:rgba(245,166,35,.12);color:var(--amber);}
+.role-procurement{background:rgba(167,139,250,.12);color:var(--purple);}
+.role-supplier{background:rgba(61,184,122,.12);color:var(--green);}
+.role-agent{background:rgba(245,166,35,.08);color:#fb923c;}
+.role-admin{background:rgba(224,82,82,.12);color:var(--red);}
+
+/* ── SHELL ── */
+.shell{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.body{flex:1;display:flex;overflow:hidden;min-height:0;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.sidebar-section{padding:16px 12px 8px;font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;transition:background .1s;border-left:3px solid transparent;font-size:12px;color:var(--text-dim);}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--amber-glow);color:var(--amber);border-left-color:var(--amber);}
+.nav-item .ni{font-size:14px;width:18px;text-align:center;}
+.nav-item .nl{font-family:var(--mono);font-size:10px;letter-spacing:.5px;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:10px;}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+.page{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;}
+.page.active{display:flex;}
+.page-header{padding:20px 24px 0;flex-shrink:0;}
+.page-title{font-family:var(--cond);font-size:24px;font-weight:900;color:var(--text-bright);letter-spacing:.5px;}
+.page-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.5px;margin-top:2px;}
+.page-body{flex:1;overflow-y:auto;padding:20px 24px;}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:1px;padding:7px 16px;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-dim);transition:all .12s;}
+.btn:hover{color:var(--text);border-color:var(--border-light);}
+.btn-primary{background:var(--amber);color:#000;border-color:var(--amber);font-weight:700;}
+.btn-primary:hover{background:var(--amber2);}
+.btn-ghost{background:transparent;color:var(--text-dim);}
+.btn-danger{background:rgba(224,82,82,.1);color:var(--red);border-color:rgba(224,82,82,.3);}
+.btn-sm{padding:5px 12px;font-size:9px;}
+.btn-xs{padding:3px 8px;font-size:9px;}
+
+/* ── STATS ROW ── */
+.stats-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;min-width:120px;flex:1;}
+.stat-val{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--text-bright);line-height:1;}
+.stat-lbl{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.5px;margin-top:4px;}
+.stat-card.amber .stat-val{color:var(--amber);}
+.stat-card.green .stat-val{color:var(--green);}
+.stat-card.red .stat-val{color:var(--red);}
+.stat-card.blue .stat-val{color:var(--blue);}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.tbl-toolbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.tbl-toolbar input,.tbl-toolbar select{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 10px;outline:none;}
+.tbl-toolbar input:focus,.tbl-toolbar select:focus{border-color:var(--amber);}
+.tbl-toolbar input{flex:1;min-width:180px;}
+table{width:100%;border-collapse:collapse;}
+th{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--text-dim);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.tbl-empty{text-align:center;padding:40px;font-family:var(--mono);font-size:11px;color:var(--text-dim);}
+
+/* ── STATUS BADGE ── */
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-family:var(--mono);font-size:9px;letter-spacing:.5px;white-space:nowrap;}
+.sp-indent_raised{background:rgba(96,165,250,.1);color:var(--blue);}
+.sp-approved{background:rgba(61,184,122,.1);color:var(--green);}
+.sp-po_issued{background:rgba(167,139,250,.1);color:var(--purple);}
+.sp-acknowledged{background:rgba(245,166,35,.1);color:var(--amber);}
+.sp-ets_set{background:rgba(245,166,35,.1);color:var(--amber);}
+.sp-shipped{background:rgba(245,166,35,.15);color:var(--amber);}
+.sp-picked_up{background:rgba(251,146,60,.1);color:#fb923c;}
+.sp-in_transit{background:rgba(251,146,60,.15);color:#fb923c;}
+.sp-under_clearance{background:rgba(251,146,60,.2);color:#fb923c;}
+.sp-at_warehouse{background:rgba(251,146,60,.25);color:#fbbf24;}
+.sp-delivered{background:rgba(61,184,122,.15);color:var(--green);}
+.sp-received{background:rgba(61,184,122,.2);color:var(--green);}
+
+/* ── PRIORITY ── */
+.pri-urgent{color:var(--red);font-family:var(--mono);font-size:9px;letter-spacing:1px;}
+.pri-high{color:#fb923c;font-family:var(--mono);font-size:9px;letter-spacing:1px;}
+.pri-normal{color:var(--text-dim);font-family:var(--mono);font-size:9px;letter-spacing:1px;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px 32px;width:700px;max-width:96vw;}
+.modal-lg{width:900px;}
+.modal-title{font-family:var(--cond);font-size:22px;font-weight:900;color:var(--text-bright);margin-bottom:20px;}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:16px;border-top:1px solid var(--border);}
+
+/* ── FORM ── */
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.fg label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;}
+.fg input,.fg select,.fg textarea{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 12px;outline:none;width:100%;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--amber);}
+.fg textarea{min-height:80px;resize:vertical;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* ── INDENT DETAIL ── */
+.detail-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;}
+.detail-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;}
+.dc-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:14px;}
+.dc-field{display:flex;flex-direction:column;gap:3px;margin-bottom:12px;}
+.dc-field label{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;}
+.dc-field span{font-size:12px;color:var(--text-bright);}
+.dc-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ── TIMELINE ── */
+.timeline{position:relative;padding-left:20px;}
+.timeline::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:16px;}
+.tl-dot{position:absolute;left:-17px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid var(--surface);}
+.tl-item.done .tl-dot{background:var(--green);}
+.tl-item.active .tl-dot{background:var(--amber);box-shadow:0 0 8px rgba(245,166,35,.5);}
+.tl-label{font-family:var(--mono);font-size:10px;color:var(--text);font-weight:500;}
+.tl-meta{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px;}
+.tl-note{font-family:var(--mono);font-size:9px;color:var(--amber);margin-top:3px;font-style:italic;}
+
+/* ── ITEMS TABLE ── */
+.items-tbl{width:100%;border-collapse:collapse;margin-top:8px;}
+.items-tbl th{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;padding:6px 8px;text-align:left;background:var(--surface2);border:1px solid var(--border);}
+.items-tbl td{padding:7px 8px;border:1px solid var(--border);font-size:11px;}
+.item-row-input{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.item-row-input input{flex:1;}
+.item-row-input input.qty{width:70px;flex:none;}
+.item-row-input input.unit{width:70px;flex:none;}
+
+/* ── DOCS ── */
+.doc-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;}
+.doc-icon{font-size:18px;}
+.doc-name{font-family:var(--mono);font-size:10px;color:var(--text);flex:1;}
+.doc-meta{font-family:var(--mono);font-size:9px;color:var(--text-dim);}
+
+/* ── ACTION PANEL ── */
+.action-panel{background:var(--amber-glow);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:16px;margin-bottom:16px;}
+.ap-title{font-family:var(--mono);font-size:9px;color:var(--amber);letter-spacing:2px;margin-bottom:12px;}
+.ap-fields{display:flex;flex-direction:column;gap:10px;}
+
+/* ── LOGIN ── */
+#loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px 48px;width:380px;}
+.login-logo{font-family:var(--cond);font-size:28px;font-weight:900;color:var(--amber);margin-bottom:2px;}
+.login-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-field label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;display:block;margin-bottom:5px;}
+.login-field input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;}
+.login-field input:focus{border-color:var(--amber);}
+.login-btn{width:100%;background:var(--amber);color:#000;font-family:var(--cond);font-size:14px;font-weight:700;letter-spacing:2px;border:none;border-radius:6px;padding:12px;cursor:pointer;margin-top:8px;}
+.login-btn:hover{background:var(--amber2);}
+.login-error{font-family:var(--mono);font-size:10px;color:var(--red);margin-top:8px;min-height:16px;}
+
+/* ── TOAST ── */
+#toastEl{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border-light);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 20px;border-radius:6px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;}
+#toastEl.show{opacity:1;}
+.divider{height:1px;background:var(--border);margin:16px 0;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">FORCAP</div>
+    <div class="login-sub">SPARES TRACKER</div>
+    <div class="login-field"><label>EMAIL</label><input type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="login-field"><label>PASSWORD</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="login-btn" onclick="doLogin()">SIGN IN</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="shell" id="appShell" style="display:none;">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-box">Mδ</div>
+      <div>
+        <div class="logo-title">FORCAP <span style="color:var(--text-dim);font-size:13px;font-weight:400;"> · SPARES</span></div>
+        <div class="logo-sub">SUPPLY CHAIN TRACKER</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="role-badge" id="roleBadge"></div>
+      <div class="user-pill" id="userPill">—</div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">SIGN OUT</button>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section">NAVIGATION</div>
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <span class="ni">📊</span><span class="nl">DASHBOARD</span>
+      </div>
+      <div class="nav-item" onclick="showPage('indents')" id="nav-indents">
+        <span class="ni">📦</span><span class="nl">ALL ORDERS</span>
+        <span class="nav-badge" id="openBadge" style="display:none;"></span>
+      </div>
+      <div class="nav-item" id="nav-raise" onclick="openNewIndentModal()" style="display:none;">
+        <span class="ni">➕</span><span class="nl">RAISE INDENT</span>
+      </div>
+      <div class="nav-item" id="nav-pending" onclick="showPage('pending')" style="display:none;">
+        <span class="ni">⏳</span><span class="nl">PENDING ACTION</span>
+        <span class="nav-badge" id="pendingBadge" style="display:none;"></span>
+      </div>
+      <div class="sidebar-section" id="admin-section" style="display:none;">ADMIN</div>
+      <div class="nav-item" id="nav-users" onclick="showPage('users')" style="display:none;">
+        <span class="ni">👥</span><span class="nl">USERS</span>
+      </div>
+      <div class="nav-item" id="nav-vessels" onclick="showPage('vessels')" style="display:none;">
+        <span class="ni">🚢</span><span class="nl">VESSELS</span>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header" style="padding-bottom:16px;">
+          <div class="page-title">DASHBOARD</div>
+          <div class="page-sub">FLEET SPARES OVERVIEW</div>
+        </div>
+        <div class="page-body">
+          <div class="stats-row" id="statsRow">
+            <div class="stat-card"><div class="stat-val" id="st-total">—</div><div class="stat-lbl">TOTAL ORDERS</div></div>
+            <div class="stat-card amber"><div class="stat-val" id="st-open">—</div><div class="stat-lbl">IN PROGRESS</div></div>
+            <div class="stat-card green"><div class="stat-val" id="st-closed">—</div><div class="stat-lbl">RECEIVED</div></div>
+            <div class="stat-card red"><div class="stat-val" id="st-overdue">—</div><div class="stat-lbl">OVERDUE</div></div>
+          </div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:12px;">RECENT ORDERS</div>
+          <div class="tbl-wrap">
+            <table><thead><tr>
+              <th>INDENT NO.</th><th>VESSEL</th><th>DESCRIPTION</th><th>PRIORITY</th><th>STATUS</th><th>SUPPLIER</th><th>UPDATED</th><th></th>
+            </tr></thead>
+            <tbody id="dashTbody"><tr><td colspan="8" class="tbl-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL INDENTS -->
+      <div class="page" id="page-indents">
+        <div class="page-header" style="padding-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div class="page-title">ALL ORDERS</div><div class="page-sub">COMPLETE INDENT REGISTER</div></div>
+            <button class="btn btn-primary" id="btnNewIndent" onclick="openNewIndentModal()" style="display:none;">+ NEW INDENT</button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="tbl-wrap">
+            <div class="tbl-toolbar">
+              <input type="text" id="indentSearch" placeholder="Search indent no., description, vessel…" oninput="renderIndents()">
+              <select id="filterStatus" onchange="renderIndents()">
+                <option value="">ALL STATUSES</option>
+                <option value="indent_raised">Indent Raised</option>
+                <option value="approved">Approved</option>
+                <option value="po_issued">PO Issued</option>
+                <option value="acknowledged">Acknowledged</option>
+                <option value="ets_set">ETS Set</option>
+                <option value="shipped">Shipped</option>
+                <option value="picked_up">Picked Up</option>
+                <option value="in_transit">In Transit</option>
+                <option value="under_clearance">Under Clearance</option>
+                <option value="at_warehouse">At Warehouse</option>
+                <option value="delivered">Delivered</option>
+                <option value="received">Received</option>
+              </select>
+              <select id="filterVessel" onchange="renderIndents()">
+                <option value="">ALL VESSELS</option>
+              </select>
+              <select id="filterPriority" onchange="renderIndents()">
+                <option value="">ALL PRIORITIES</option>
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="normal">Normal</option>
+              </select>
+            </div>
+            <table><thead><tr>
+              <th>INDENT NO.</th><th>VESSEL</th><th>DESCRIPTION</th><th>ITEMS</th><th>PRIORITY</th><th>STATUS</th><th>PO NO.</th><th>SUPPLIER</th><th>ETA</th><th>RAISED</th><th></th>
+            </tr></thead>
+            <tbody id="indentTbody"><tr><td colspan="11" class="tbl-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PENDING ACTION -->
+      <div class="page" id="page-pending">
+        <div class="page-header" style="padding-bottom:0;">
+          <div class="page-title">PENDING ACTION</div>
+          <div class="page-sub">ORDERS REQUIRING YOUR ATTENTION</div>
+        </div>
+        <div class="page-body">
+          <div class="tbl-wrap">
+            <table><thead><tr>
+              <th>INDENT NO.</th><th>VESSEL</th><th>DESCRIPTION</th><th>CURRENT STATUS</th><th>YOUR ACTION</th><th>DAYS WAITING</th><th></th>
+            </tr></thead>
+            <tbody id="pendingTbody"><tr><td colspan="7" class="tbl-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <div class="page-header" style="padding-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div class="page-title">USERS</div><div class="page-sub">ACCESS MANAGEMENT</div></div>
+            <button class="btn btn-primary" onclick="openUserModal()">+ ADD USER</button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="tbl-wrap">
+            <table><thead><tr>
+              <th>NAME</th><th>EMAIL</th><th>ROLE</th><th>VESSEL / COMPANY</th><th>PASSWORD</th><th></th>
+            </tr></thead>
+            <tbody id="usersTbody"><tr><td colspan="6" class="tbl-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VESSELS -->
+      <div class="page" id="page-vessels">
+        <div class="page-header" style="padding-bottom:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div class="page-title">VESSELS</div><div class="page-sub">FLEET REGISTER</div></div>
+            <button class="btn btn-primary" onclick="openVesselModal()">+ ADD VESSEL</button>
+          </div>
+        </div>
+        <div class="page-body">
+          <div class="tbl-wrap">
+            <table><thead><tr>
+              <th>NAME</th><th>IMO</th><th>TYPE</th><th></th>
+            </tr></thead>
+            <tbody id="vesselsTbody"><tr><td colspan="4" class="tbl-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /body -->
+</div><!-- /shell -->
+
+<!-- INDENT DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box modal-lg" id="detailBox"></div>
+</div>
+
+<!-- NEW INDENT MODAL -->
+<div class="modal-overlay" id="newIndentModal">
+  <div class="modal-box">
+    <div class="modal-title">RAISE NEW INDENT</div>
+    <div class="form-row">
+      <div class="fg"><label>INDENT NUMBER *</label><input id="ni_number" placeholder="e.g. AT-2026-0042"></div>
+      <div class="fg"><label>VESSEL *</label><select id="ni_vessel"></select></div>
+    </div>
+    <div class="fg"><label>DESCRIPTION *</label><input id="ni_desc" placeholder="Brief description of what's needed"></div>
+    <div class="form-row">
+      <div class="fg"><label>PRIORITY</label>
+        <select id="ni_priority">
+          <option value="normal">Normal</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <div class="fg"><label>REQUIRED BY DATE</label><input type="date" id="ni_required_by"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>SUPPLIER NAME</label><input id="ni_supplier_name" placeholder="e.g. Marine Parts Ltd"></div>
+      <div class="fg"><label>SUPPLIER EMAIL</label><input type="email" id="ni_supplier_email" placeholder="supplier@company.com"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>AGENT NAME</label><input id="ni_agent_name" placeholder="e.g. Lagos Shipping Agents"></div>
+      <div class="fg"><label>AGENT EMAIL</label><input type="email" id="ni_agent_email" placeholder="agent@company.com"></div>
+    </div>
+    <div class="divider"></div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">LINE ITEMS</div>
+    <div id="itemsContainer"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addItemRow()" style="margin-bottom:12px;">+ ADD ITEM</button>
+    <div class="fg"><label>REMARKS</label><textarea id="ni_remarks" placeholder="Any additional notes…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('newIndentModal')">CANCEL</button>
+      <button class="btn btn-primary" onclick="submitNewIndent()">RAISE INDENT</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal-box">
+    <div class="modal-title" id="userModalTitle">ADD USER</div>
+    <div class="form-row">
+      <div class="fg"><label>FULL NAME *</label><input id="um_name" placeholder="John Smith"></div>
+      <div class="fg"><label>EMAIL *</label><input type="email" id="um_email" placeholder="user@company.com"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>ROLE *</label>
+        <select id="um_role" onchange="toggleUserRoleFields()">
+          <option value="vessel">Vessel</option>
+          <option value="superintendent">Superintendent</option>
+          <option value="procurement">C&P / Procurement</option>
+          <option value="supplier">Supplier</option>
+          <option value="agent">Agent</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="fg"><label>PASSWORD</label><input id="um_password" placeholder="Leave blank to auto-generate"></div>
+    </div>
+    <div class="fg" id="um_vessel_row"><label>VESSEL (for vessel users)</label><select id="um_vessel"></select></div>
+    <div class="fg" id="um_company_row"><label>COMPANY NAME</label><input id="um_company" placeholder="e.g. Petromas Shipping"></div>
+    <div id="um_error" style="font-family:var(--mono);font-size:10px;color:var(--red);min-height:16px;margin-top:4px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('userModal')">CANCEL</button>
+      <button class="btn btn-primary" onclick="saveUser()">SAVE USER</button>
+    </div>
+  </div>
+</div>
+
+<!-- VESSEL MODAL -->
+<div class="modal-overlay" id="vesselModal">
+  <div class="modal-box" style="width:420px;">
+    <div class="modal-title">ADD VESSEL</div>
+    <div class="fg"><label>VESSEL NAME *</label><input id="vm_name" placeholder="e.g. Alfred Temile"></div>
+    <div class="form-row">
+      <div class="fg"><label>IMO NUMBER</label><input id="vm_imo" placeholder="9859882"></div>
+      <div class="fg"><label>TYPE</label><select id="vm_type"><option>LPG</option><option>LNG</option><option>Tanker</option><option>Bulker</option><option>Container</option><option>Other</option></select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('vesselModal')">CANCEL</button>
+      <button class="btn btn-primary" onclick="saveVessel()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastEl"></div>
+
+<script>
+const API_BASE = 'https://spares-api.forcap.io'; // update to actual backend URL
+
+// ── State ──────────────────────────────────────────────
+let currentUser = null;
+let allIndents  = [];
+let allVessels  = [];
+let allUsers    = [];
+let editUserId  = null;
+
+// ── Auth ───────────────────────────────────────────────
+function getToken() { return localStorage.getItem('spares_token') || ''; }
+function saveToken(t, u) {
+  localStorage.setItem('spares_token', t);
+  localStorage.setItem('spares_user', JSON.stringify(u));
+}
+function loadUser() {
+  try { return JSON.parse(localStorage.getItem('spares_user')); } catch { return null; }
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!email || !pwd) { errEl.textContent = 'Enter email and password.'; return; }
+  try {
+    const res  = await api('/api/auth/login', 'POST', { email, password: pwd }, true);
+    saveToken(res.token, res.user);
+    currentUser = res.user;
+    initApp();
+  } catch(e) { errEl.textContent = e.message || 'Login failed'; }
+}
+
+function doLogout() {
+  localStorage.removeItem('spares_token');
+  localStorage.removeItem('spares_user');
+  currentUser = null;
+  document.getElementById('appShell').style.display   = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ── API helper ─────────────────────────────────────────
+async function api(path, method='GET', body=null, skipAuth=false) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (!skipAuth) headers['x-auth-token'] = getToken();
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(API_BASE + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── Toast ──────────────────────────────────────────────
+let _tt;
+function toast(msg) {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Init ───────────────────────────────────────────────
+function initApp() {
+  const user = currentUser || loadUser();
+  if (!user) return;
+  currentUser = user;
+
+  document.getElementById('loginScreen').style.display  = 'none';
+  document.getElementById('appShell').style.display     = 'flex';
+  document.getElementById('userPill').textContent        = user.name || user.email;
+  const rb = document.getElementById('roleBadge');
+  rb.className = `role-badge role-${user.role}`;
+  rb.textContent = user.role.toUpperCase();
+
+  // Show/hide nav by role
+  const canRaise = ['vessel','admin','superintendent'].includes(user.role);
+  const isAdmin  = ['admin','superintendent'].includes(user.role);
+  const hasPending = ['superintendent','procurement','supplier','agent','vessel'].includes(user.role);
+
+  if (canRaise)   { document.getElementById('nav-raise').style.display   = 'flex'; document.getElementById('btnNewIndent').style.display = 'inline-flex'; }
+  if (hasPending) { document.getElementById('nav-pending').style.display = 'flex'; }
+  if (isAdmin)    {
+    document.getElementById('admin-section').style.display = 'block';
+    document.getElementById('nav-users').style.display     = 'flex';
+    document.getElementById('nav-vessels').style.display   = 'flex';
+  }
+
+  loadAll();
+
+  // Check magic link
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('indent')) setTimeout(() => openDetail(params.get('indent')), 800);
+}
+
+async function loadAll() {
+  try {
+    [allIndents, allVessels] = await Promise.all([api('/api/indents'), api('/api/vessels')]);
+    if (['admin','superintendent'].includes(currentUser?.role)) allUsers = await api('/api/users');
+    populateVesselFilters();
+    loadStats();
+    renderDash();
+    renderIndents();
+    renderPending();
+    if (currentUser?.role === 'admin') { renderUsers(); renderVessels(); }
+    updateBadges();
+  } catch(e) { toast('Error loading data: ' + e.message); }
+}
+
+function populateVesselFilters() {
+  ['filterVessel','ni_vessel','um_vessel'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const keep = el.querySelector('option[value=""]');
+    el.innerHTML = '';
+    if (keep) el.appendChild(keep);
+    allVessels.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v.id; o.textContent = v.name;
+      el.appendChild(o);
+    });
+  });
+}
+
+// ── Stats ──────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await api('/api/stats');
+    document.getElementById('st-total').textContent   = s.total;
+    document.getElementById('st-open').textContent    = s.open;
+    document.getElementById('st-closed').textContent  = s.closed;
+    document.getElementById('st-overdue').textContent = s.overdue;
+  } catch {}
+}
+
+function updateBadges() {
+  const open = allIndents.filter(i => i.status !== 'received').length;
+  const ob = document.getElementById('openBadge');
+  ob.textContent = open; ob.style.display = open ? 'inline' : 'none';
+
+  const pending = getPendingForUser().length;
+  const pb = document.getElementById('pendingBadge');
+  pb.textContent = pending; pb.style.display = pending ? 'inline' : 'none';
+}
+
+// ── Pages ──────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+}
+
+// ── Dashboard ──────────────────────────────────────────
+function renderDash() {
+  const recent = [...allIndents].sort((a,b) => new Date(b.updated_at)-new Date(a.updated_at)).slice(0,10);
+  const tb = document.getElementById('dashTbody');
+  if (!recent.length) { tb.innerHTML = '<tr><td colspan="8" class="tbl-empty">No orders yet</td></tr>'; return; }
+  tb.innerHTML = recent.map(i => `
+    <tr>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--amber);">${i.indent_number}</span></td>
+      <td style="font-size:11px;">${vesselName(i.vessel_id)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.description}</td>
+      <td><span class="pri-${i.priority}">${(i.priority||'normal').toUpperCase()}</span></td>
+      <td>${statusPill(i.status)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">${i.supplier_name||'—'}</td>
+      <td style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">${fmtDate(i.updated_at)}</td>
+      <td><button class="btn btn-xs" onclick="openDetail('${i.id}')">VIEW</button></td>
+    </tr>`).join('');
+}
+
+// ── Indents list ───────────────────────────────────────
+function renderIndents() {
+  const search = document.getElementById('indentSearch').value.toLowerCase();
+  const fStatus = document.getElementById('filterStatus').value;
+  const fVessel = document.getElementById('filterVessel').value;
+  const fPri    = document.getElementById('filterPriority').value;
+
+  let rows = allIndents.filter(i => {
+    if (fStatus && i.status !== fStatus) return false;
+    if (fVessel && i.vessel_id !== fVessel) return false;
+    if (fPri    && i.priority !== fPri)    return false;
+    if (search) {
+      const hay = [i.indent_number, i.description, i.vessel_name, i.supplier_name, i.po_number].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const tb = document.getElementById('indentTbody');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" class="tbl-empty">No orders found</td></tr>'; return; }
+  tb.innerHTML = rows.map(i => `
+    <tr>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--amber);">${i.indent_number}</span></td>
+      <td style="font-size:11px;">${vesselName(i.vessel_id)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.description}</td>
+      <td style="font-family:var(--mono);font-size:10px;">${(i.items||[]).length}</td>
+      <td><span class="pri-${i.priority}">${(i.priority||'normal').toUpperCase()}</span></td>
+      <td>${statusPill(i.status)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">${i.po_number||'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">${i.supplier_name||'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">${i.eta||'—'}</td>
+      <td style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">${fmtDate(i.created_at)}</td>
+      <td><button class="btn btn-xs" onclick="openDetail('${i.id}')">VIEW</button></td>
+    </tr>`).join('');
+}
+
+// ── Pending ────────────────────────────────────────────
+const NEXT_ACTION = {
+  indent_raised:   { roles:['superintendent','admin'],  action:'Approve Indent' },
+  approved:        { roles:['procurement','admin'],     action:'Issue PO' },
+  po_issued:       { roles:['supplier','admin'],        action:'Acknowledge Order' },
+  acknowledged:    { roles:['supplier','admin'],        action:'Set ETS' },
+  ets_set:         { roles:['supplier','admin'],        action:'Mark as Shipped' },
+  shipped:         { roles:['agent','admin'],           action:'Confirm Pickup' },
+  picked_up:       { roles:['agent','admin'],           action:'Update In Transit' },
+  in_transit:      { roles:['agent','admin'],           action:'Under Customs Clearance' },
+  under_clearance: { roles:['agent','admin'],           action:'At Local Warehouse' },
+  at_warehouse:    { roles:['agent','admin'],           action:'Mark Delivered' },
+  delivered:       { roles:['vessel','superintendent','admin'], action:'Confirm Receipt' },
+};
+
+function getPendingForUser() {
+  if (!currentUser) return [];
+  return allIndents.filter(i => {
+    const na = NEXT_ACTION[i.status];
+    return na && na.roles.includes(currentUser.role) && i.status !== 'received';
+  });
+}
+
+function renderPending() {
+  const pending = getPendingForUser();
+  const tb = document.getElementById('pendingTbody');
+  if (!pending.length) { tb.innerHTML = '<tr><td colspan="7" class="tbl-empty">No pending actions — you\'re all caught up ✓</td></tr>'; return; }
+  tb.innerHTML = pending.map(i => {
+    const na   = NEXT_ACTION[i.status];
+    const days = Math.floor((Date.now() - new Date(i.updated_at)) / 86400000);
+    return `<tr>
+      <td><span style="font-family:var(--mono);font-size:10px;color:var(--amber);">${i.indent_number}</span></td>
+      <td>${vesselName(i.vessel_id)}</td>
+      <td>${i.description}</td>
+      <td>${statusPill(i.status)}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--green);">${na?.action||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:${days>3?'var(--red)':'var(--text-dim)'};">${days}d</td>
+      <td><button class="btn btn-xs btn-primary" onclick="openDetail('${i.id}')">ACTION</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Indent Detail ──────────────────────────────────────
+const STATUS_LABELS = {
+  indent_raised:'Indent Raised', approved:'Approved', po_issued:'PO Issued',
+  acknowledged:'Acknowledged by Supplier', ets_set:'ETS Confirmed', shipped:'Shipped',
+  picked_up:'Picked Up', in_transit:'In Transit', under_clearance:'Under Customs Clearance',
+  at_warehouse:'At Local Warehouse', delivered:'Delivered to Vessel', received:'Received & Closed',
+};
+const ALL_STATUSES = ['indent_raised','approved','po_issued','acknowledged','ets_set','shipped','picked_up','in_transit','under_clearance','at_warehouse','delivered','received'];
+
+const STATUS_ROLE = {
+  approved:        ['superintendent','admin'],
+  po_issued:       ['procurement','admin'],
+  acknowledged:    ['supplier','admin'],
+  ets_set:         ['supplier','admin'],
+  shipped:         ['supplier','admin'],
+  picked_up:       ['agent','admin'],
+  in_transit:      ['agent','admin'],
+  under_clearance: ['agent','admin'],
+  at_warehouse:    ['agent','admin'],
+  delivered:       ['agent','admin'],
+  received:        ['vessel','superintendent','admin'],
+};
+
+// Extra fields per status
+const STATUS_FIELDS = {
+  po_issued:    [{ id:'po_number',    label:'PO NUMBER',     type:'text', placeholder:'e.g. PO-2026-0055', required:true }],
+  ets_set:      [{ id:'etd',          label:'EST. SHIP DATE',type:'date', required:true },
+                 { id:'eta',          label:'EST. ARRIVAL',  type:'date' }],
+  shipped:      [{ id:'awb_number',   label:'AWB / BL NO.',  type:'text', placeholder:'e.g. 125-12345678' },
+                 { id:'tracking_url', label:'TRACKING URL',  type:'text', placeholder:'https://…' },
+                 { id:'eta',          label:'ETA (UPDATE)',  type:'date' }],
+  at_warehouse: [{ id:'warehouse_location', label:'WAREHOUSE / LOCATION', type:'text', placeholder:'e.g. Tin Can Island, Lagos' }],
+};
+
+async function openDetail(id) {
+  const indent = allIndents.find(i => i.id === id) || await api('/api/indents/'+id);
+  if (!indent) { toast('Order not found'); return; }
+
+  const curIdx = ALL_STATUSES.indexOf(indent.status);
+  const nextStatus = ALL_STATUSES[curIdx + 1];
+  const canAct = nextStatus && STATUS_ROLE[nextStatus] && STATUS_ROLE[nextStatus].includes(currentUser?.role);
+
+  const extraFields = STATUS_FIELDS[nextStatus] || [];
+
+  // Build action panel
+  let actionHtml = '';
+  if (canAct && nextStatus !== 'received') {
+    const fieldsHtml = extraFields.map(f => `
+      <div class="fg" style="margin-bottom:8px;">
+        <label>${f.label}${f.required?' *':''}</label>
+        <input type="${f.type||'text'}" id="af_${f.id}" placeholder="${f.placeholder||''}" style="width:100%;">
+      </div>`).join('');
+    actionHtml = `
+      <div class="action-panel">
+        <div class="ap-title">YOUR ACTION — MARK AS: ${STATUS_LABELS[nextStatus]?.toUpperCase()}</div>
+        <div class="ap-fields">
+          ${fieldsHtml}
+          <div class="fg" style="margin-bottom:8px;">
+            <label>NOTE (OPTIONAL)</label>
+            <input type="text" id="af_note" placeholder="Any notes for this update…" style="width:100%;">
+          </div>
+          <button class="btn btn-primary" onclick="submitStatusUpdate('${id}','${nextStatus}')">
+            MARK AS: ${STATUS_LABELS[nextStatus]?.toUpperCase()}
+          </button>
+        </div>
+      </div>`;
+  } else if (canAct && nextStatus === 'received') {
+    actionHtml = `
+      <div class="action-panel">
+        <div class="ap-title">YOUR ACTION — CONFIRM RECEIPT</div>
+        <div class="ap-fields">
+          <div class="fg" style="margin-bottom:8px;">
+            <label>CONDITION / REMARKS</label>
+            <input type="text" id="af_note" placeholder="e.g. All items received in good condition" style="width:100%;">
+          </div>
+          <button class="btn btn-primary" onclick="submitStatusUpdate('${id}','received')">✓ CONFIRM RECEIPT & CLOSE</button>
+        </div>
+      </div>`;
+  }
+
+  // Reassign supplier/agent (superintendent/admin only)
+  let reassignHtml = '';
+  if (['superintendent','admin'].includes(currentUser?.role)) {
+    reassignHtml = `
+      <div style="margin-top:16px;">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">REASSIGN PARTIES</div>
+        <div class="form-row" style="margin-bottom:8px;">
+          <div class="fg"><label>SUPPLIER NAME</label><input id="rs_supplier_name" value="${indent.supplier_name||''}" style="width:100%;"></div>
+          <div class="fg"><label>SUPPLIER EMAIL</label><input type="email" id="rs_supplier_email" value="${indent.supplier_email||''}" style="width:100%;"></div>
+        </div>
+        <div class="form-row" style="margin-bottom:8px;">
+          <div class="fg"><label>AGENT NAME</label><input id="rs_agent_name" value="${indent.agent_name||''}" style="width:100%;"></div>
+          <div class="fg"><label>AGENT EMAIL</label><input type="email" id="rs_agent_email" value="${indent.agent_email||''}" style="width:100%;"></div>
+        </div>
+        <button class="btn btn-sm" onclick="saveParties('${id}')">SAVE PARTIES</button>
+      </div>`;
+  }
+
+  // Timeline
+  const tl = (indent.timeline || []);
+  const tlHtml = tl.map((t, idx) => {
+    const isDone   = idx < tl.length - 1;
+    const isActive = idx === tl.length - 1;
+    return `<div class="tl-item ${isDone?'done':isActive?'active':''}">
+      <div class="tl-dot"></div>
+      <div class="tl-label">${t.label || STATUS_LABELS[t.status] || t.status}</div>
+      <div class="tl-meta">${t.by || '—'} · ${fmtDatetime(t.at)}</div>
+      ${t.note ? `<div class="tl-note">${t.note}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Items
+  const itemsHtml = (indent.items||[]).length ? `
+    <table class="items-tbl">
+      <thead><tr><th>PART / REF NO.</th><th>DESCRIPTION</th><th>QTY</th><th>UNIT</th></tr></thead>
+      <tbody>${(indent.items||[]).map(it=>`
+        <tr><td>${it.part_no||'—'}</td><td>${it.description||'—'}</td><td>${it.qty||'—'}</td><td>${it.unit||'—'}</td></tr>
+      `).join('')}</tbody>
+    </table>` : '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">No line items</div>';
+
+  // Documents
+  const docsHtml = (indent.documents||[]).map(d => `
+    <div class="doc-item">
+      <span class="doc-icon">${docIcon(d.type)}</span>
+      <span class="doc-name">${d.name}</span>
+      <span class="doc-meta">${d.uploaded_by} · ${fmtDate(d.uploaded_at)}</span>
+      <button class="btn btn-xs" onclick="downloadDoc('${d.id}','${indent.id}')">↓ DOWNLOAD</button>
+    </div>`).join('') || '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">No documents uploaded</div>';
+
+  // Upload doc
+  const uploadHtml = `
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="doc_type" style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:10px;padding:6px 10px;">
+        <option value="invoice">Invoice</option>
+        <option value="awb">AWB / BL</option>
+        <option value="packing_list">Packing List</option>
+        <option value="delivery_note">Delivery Note</option>
+        <option value="other">Other</option>
+      </select>
+      <input type="file" id="doc_file" style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">
+      <button class="btn btn-sm" onclick="uploadDoc('${id}')">UPLOAD</button>
+    </div>`;
+
+  document.getElementById('detailBox').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+      <div>
+        <div style="font-family:var(--cond);font-size:22px;font-weight:900;color:var(--text-bright);">${indent.indent_number}</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-top:2px;">${indent.description}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        ${statusPill(indent.status)}
+        <button class="btn btn-xs btn-ghost" onclick="closeModal('detailModal')">✕ CLOSE</button>
+      </div>
+    </div>
+
+    ${actionHtml}
+
+    <div class="detail-grid">
+      <div>
+        <div class="detail-card" style="margin-bottom:14px;">
+          <div class="dc-title">ORDER DETAILS</div>
+          <div class="dc-row">
+            <div class="dc-field"><label>VESSEL</label><span>${vesselName(indent.vessel_id)}</span></div>
+            <div class="dc-field"><label>PRIORITY</label><span class="pri-${indent.priority}">${(indent.priority||'normal').toUpperCase()}</span></div>
+            <div class="dc-field"><label>PO NUMBER</label><span style="font-family:var(--mono);font-size:11px;">${indent.po_number||'—'}</span></div>
+            <div class="dc-field"><label>REQUIRED BY</label><span style="font-family:var(--mono);font-size:11px;">${indent.required_by||'—'}</span></div>
+            <div class="dc-field"><label>SUPPLIER</label><span>${indent.supplier_name||'—'}</span></div>
+            <div class="dc-field"><label>AGENT</label><span>${indent.agent_name||'—'}</span></div>
+            <div class="dc-field"><label>AWB / BL</label><span style="font-family:var(--mono);font-size:11px;">${indent.awb_number||'—'}</span></div>
+            <div class="dc-field"><label>ETA</label><span style="font-family:var(--mono);font-size:11px;">${indent.eta||'—'}</span></div>
+          </div>
+          ${indent.tracking_url ? `<div class="dc-field" style="margin-top:8px;"><label>TRACKING</label><a href="${indent.tracking_url}" target="_blank" style="font-family:var(--mono);font-size:10px;color:var(--blue);">${indent.tracking_url}</a></div>` : ''}
+          ${indent.remarks ? `<div class="dc-field" style="margin-top:8px;"><label>REMARKS</label><span>${indent.remarks}</span></div>` : ''}
+        </div>
+        <div class="detail-card" style="margin-bottom:14px;">
+          <div class="dc-title">LINE ITEMS</div>
+          ${itemsHtml}
+        </div>
+        <div class="detail-card">
+          <div class="dc-title">DOCUMENTS</div>
+          ${docsHtml}
+          ${uploadHtml}
+        </div>
+        ${reassignHtml ? `<div class="detail-card" style="margin-top:14px;">${reassignHtml}</div>` : ''}
+      </div>
+      <div>
+        <div class="detail-card">
+          <div class="dc-title">TIMELINE</div>
+          <div class="timeline">${tlHtml || '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">No history</div>'}</div>
+        </div>
+      </div>
+    </div>`;
+
+  openModal('detailModal');
+}
+
+async function submitStatusUpdate(id, newStatus) {
+  const body = { status: newStatus };
+  body.note = document.getElementById('af_note')?.value || '';
+
+  const fields = STATUS_FIELDS[newStatus] || [];
+  for (const f of fields) {
+    const val = document.getElementById('af_'+f.id)?.value || '';
+    if (f.required && !val) { toast('Please fill required fields'); return; }
+    if (val) body[f.id] = val;
+  }
+  if (newStatus === 'at_warehouse') {
+    const loc = document.getElementById('af_warehouse_location')?.value;
+    if (loc) body.warehouse_location = loc;
+  }
+
+  try {
+    const updated = await api('/api/indents/'+id+'/status', 'PATCH', body);
+    const idx = allIndents.findIndex(i => i.id === id);
+    if (idx !== -1) allIndents[idx] = updated;
+    toast('Status updated: ' + STATUS_LABELS[newStatus]);
+    closeModal('detailModal');
+    renderDash(); renderIndents(); renderPending(); updateBadges();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+async function saveParties(id) {
+  const body = {
+    supplier_name:  document.getElementById('rs_supplier_name')?.value,
+    supplier_email: document.getElementById('rs_supplier_email')?.value,
+    agent_name:     document.getElementById('rs_agent_name')?.value,
+    agent_email:    document.getElementById('rs_agent_email')?.value,
+  };
+  try {
+    const updated = await api('/api/indents/'+id, 'PATCH', body);
+    const idx = allIndents.findIndex(i => i.id === id);
+    if (idx !== -1) allIndents[idx] = updated;
+    toast('Parties updated');
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+// ── New Indent ─────────────────────────────────────────
+let itemRows = 0;
+function openNewIndentModal() {
+  itemRows = 0;
+  document.getElementById('itemsContainer').innerHTML = '';
+  ['ni_number','ni_desc','ni_supplier_name','ni_supplier_email','ni_agent_name','ni_agent_email','ni_remarks'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('ni_priority').value = 'normal';
+  document.getElementById('ni_required_by').value = '';
+  addItemRow();
+  openModal('newIndentModal');
+}
+
+function addItemRow() {
+  const c = document.getElementById('itemsContainer');
+  const row = document.createElement('div');
+  row.className = 'item-row-input';
+  row.id = 'itemrow_'+itemRows;
+  const idx = itemRows++;
+  row.innerHTML = `
+    <input placeholder="Part / Ref No." id="ir_part_${idx}" style="width:130px;flex:none;">
+    <input placeholder="Description *" id="ir_desc_${idx}" style="flex:1;">
+    <input placeholder="Qty" id="ir_qty_${idx}" class="qty" style="width:60px;flex:none;">
+    <input placeholder="Unit" id="ir_unit_${idx}" class="unit" style="width:60px;flex:none;">
+    <button class="btn btn-xs btn-danger" onclick="this.parentElement.remove()">✕</button>`;
+  c.appendChild(row);
+}
+
+async function submitNewIndent() {
+  const number  = document.getElementById('ni_number').value.trim();
+  const vessel  = document.getElementById('ni_vessel').value;
+  const desc    = document.getElementById('ni_desc').value.trim();
+  if (!number || !vessel || !desc) { toast('Fill required fields (Indent No., Vessel, Description)'); return; }
+
+  const items = [];
+  document.querySelectorAll('[id^="ir_desc_"]').forEach(el => {
+    const idx = el.id.split('_')[2];
+    const d   = el.value.trim();
+    if (d) items.push({
+      part_no: document.getElementById('ir_part_'+idx)?.value||'',
+      description: d,
+      qty:  document.getElementById('ir_qty_'+idx)?.value||'',
+      unit: document.getElementById('ir_unit_'+idx)?.value||'',
+    });
+  });
+
+  const vName = allVessels.find(v=>v.id===vessel)?.name || '';
+  const body = {
+    indent_number: number, vessel_id: vessel, vessel_name: vName,
+    description: desc,
+    priority: document.getElementById('ni_priority').value,
+    required_by: document.getElementById('ni_required_by').value,
+    supplier_name: document.getElementById('ni_supplier_name').value,
+    supplier_email: document.getElementById('ni_supplier_email').value,
+    agent_name: document.getElementById('ni_agent_name').value,
+    agent_email: document.getElementById('ni_agent_email').value,
+    remarks: document.getElementById('ni_remarks').value,
+    items,
+  };
+
+  try {
+    const created = await api('/api/indents', 'POST', body);
+    allIndents.unshift(created);
+    toast('Indent raised: ' + created.indent_number);
+    closeModal('newIndentModal');
+    renderDash(); renderIndents(); renderPending(); updateBadges(); loadStats();
+  } catch(e) { toast('Error: ' + e.message); }
+}
+
+// ── Documents ──────────────────────────────────────────
+async function uploadDoc(indentId) {
+  const fileEl = document.getElementById('doc_file');
+  const type   = document.getElementById('doc_type').value;
+  if (!fileEl.files[0]) { toast('Select a file first'); return; }
+  const file = fileEl.files[0];
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      await api('/api/indents/'+indentId+'/documents', 'POST', {
+        name: file.name, type, data: reader.result.split(',')[1]
+      });
+      toast('Document uploaded');
+      const updated = await api('/api/indents/'+indentId);
+      const idx = allIndents.findIndex(i => i.id === indentId);
+      if (idx !== -1) allIndents[idx] = updated;
+      openDetail(indentId);
+    } catch(e) { toast('Upload error: '+e.message); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function downloadDoc(docId, indentId) {
+  const indent = allIndents.find(i => i.id === indentId);
+  const doc    = indent?.documents?.find(d => d.id === docId);
+  if (!doc?.data) { toast('Document not available'); return; }
+  const a = document.createElement('a');
+  a.href = 'data:application/octet-stream;base64,' + doc.data;
+  a.download = doc.name;
+  a.click();
+}
+
+// ── Users ──────────────────────────────────────────────
+function renderUsers() {
+  const tb = document.getElementById('usersTbody');
+  if (!allUsers.length) { tb.innerHTML = '<tr><td colspan="6" class="tbl-empty">No users</td></tr>'; return; }
+  tb.innerHTML = allUsers.map(u => `
+    <tr>
+      <td>${u.name||'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;">${u.email}</td>
+      <td><span class="role-badge role-${u.role}">${u.role.toUpperCase()}</span></td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">${u.vessel?vesselName(u.vessel):u.company||'—'}</td>
+      <td style="font-family:var(--mono);font-size:9px;color:var(--text-dim);">••••••••</td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-xs" onclick="editUser('${u.id}')">EDIT</button>
+        <button class="btn btn-xs btn-danger" onclick="deleteUser('${u.id}')">DEL</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openUserModal(prefill) {
+  editUserId = null;
+  document.getElementById('userModalTitle').textContent = 'ADD USER';
+  ['um_name','um_email','um_password','um_company'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('um_role').value = 'vessel';
+  document.getElementById('um_error').textContent = '';
+  toggleUserRoleFields();
+  openModal('userModal');
+}
+
+function editUser(id) {
+  const u = allUsers.find(u => u.id === id);
+  if (!u) return;
+  editUserId = id;
+  document.getElementById('userModalTitle').textContent = 'EDIT USER';
+  document.getElementById('um_name').value    = u.name || '';
+  document.getElementById('um_email').value   = u.email || '';
+  document.getElementById('um_role').value    = u.role || 'vessel';
+  document.getElementById('um_company').value = u.company || '';
+  document.getElementById('um_password').value = '';
+  document.getElementById('um_error').textContent = '';
+  toggleUserRoleFields();
+  if (u.vessel) document.getElementById('um_vessel').value = u.vessel;
+  openModal('userModal');
+}
+
+function toggleUserRoleFields() {
+  const role = document.getElementById('um_role').value;
+  document.getElementById('um_vessel_row').style.display  = role === 'vessel' ? 'flex' : 'none';
+  document.getElementById('um_company_row').style.display = ['supplier','agent','procurement'].includes(role) ? 'flex' : 'none';
+}
+
+async function saveUser() {
+  const name = document.getElementById('um_name').value.trim();
+  const email = document.getElementById('um_email').value.trim();
+  const role  = document.getElementById('um_role').value;
+  const pass  = document.getElementById('um_password').value;
+  const vessel = document.getElementById('um_vessel').value;
+  const company = document.getElementById('um_company').value.trim();
+  const errEl = document.getElementById('um_error');
+  errEl.textContent = '';
+  if (!name || !email) { errEl.textContent = 'Name and email required'; return; }
+  try {
+    const body = { name, email, role, vessel, company, ...(pass ? { password: pass } : {}) };
+    if (editUserId) {
+      const updated = await api('/api/users/'+editUserId, 'PUT', body);
+      const idx = allUsers.findIndex(u => u.id === editUserId);
+      if (idx !== -1) allUsers[idx] = updated;
+    } else {
+      const created = await api('/api/users', 'POST', body);
+      allUsers.push(created);
+    }
+    toast(editUserId ? 'User updated' : 'User added');
+    closeModal('userModal');
+    renderUsers();
+  } catch(e) { errEl.textContent = e.message; }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Delete this user?')) return;
+  try {
+    await api('/api/users/'+id, 'DELETE');
+    allUsers = allUsers.filter(u => u.id !== id);
+    renderUsers(); toast('User deleted');
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+// ── Vessels ────────────────────────────────────────────
+function renderVessels() {
+  const tb = document.getElementById('vesselsTbody');
+  tb.innerHTML = allVessels.map(v => `
+    <tr>
+      <td style="font-weight:600;">${v.name}</td>
+      <td style="font-family:var(--mono);font-size:10px;">${v.imo||'—'}</td>
+      <td>${v.type||'—'}</td>
+      <td></td>
+    </tr>`).join('');
+}
+
+function openVesselModal() { openModal('vesselModal'); }
+async function saveVessel() {
+  const name = document.getElementById('vm_name').value.trim();
+  if (!name) { toast('Vessel name required'); return; }
+  try {
+    const v = await api('/api/vessels', 'POST', { name, imo: document.getElementById('vm_imo').value, type: document.getElementById('vm_type').value });
+    allVessels.push(v);
+    populateVesselFilters();
+    renderVessels();
+    closeModal('vesselModal');
+    toast('Vessel added');
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+// ── Helpers ────────────────────────────────────────────
+function vesselName(id) { return allVessels.find(v=>v.id===id)?.name || id || '—'; }
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}); }
+function fmtDatetime(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'})+' '+new Date(d).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+function docIcon(type) { return {invoice:'🧾',awb:'✈️',packing_list:'📋',delivery_note:'📄',other:'📎'}[type]||'📎'; }
+function statusPill(s) { return `<span class="status-pill sp-${s}">${(STATUS_LABELS[s]||s).toUpperCase()}</span>`; }
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+// close modals on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ── Boot ───────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Check magic link token
+  const params = new URLSearchParams(window.location.search);
+  const magic  = params.get('magic');
+  if (magic) {
+    localStorage.setItem('spares_token', magic);
+    try {
+      const payload = JSON.parse(atob(magic.split('.')[0]));
+      localStorage.setItem('spares_user', JSON.stringify(payload));
+      currentUser = payload;
+    } catch {}
+  }
+  currentUser = currentUser || loadUser();
+  if (currentUser && getToken()) initApp();
+});
+</script>
+</body>
+</html>
