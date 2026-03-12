@@ -228,7 +228,7 @@ app.post('/api/vessels', requireAuth, requireRole('admin', 'superintendent'), (r
 // ═══════════════════════════════════════════════════════
 
 const STATUSES = [
-  'indent_raised',    // vessel
+  'registered',    // vessel
   'approved',         // superintendent
   'po_issued',        // C&P
   'acknowledged',     // supplier
@@ -243,7 +243,7 @@ const STATUSES = [
 ];
 
 const STATUS_LABELS = {
-  indent_raised:   'Indent Raised',
+  registered:      'Registered for Tracking',
   approved:        'Approved',
   po_issued:       'PO Issued',
   acknowledged:    'Acknowledged by Supplier',
@@ -367,7 +367,7 @@ app.post('/api/indents', requireAuth, async (req, res) => {
     priority: req.body.priority || 'normal',
     required_by: req.body.required_by || '',
     remarks: req.body.remarks || '',
-    status: 'indent_raised',
+    status: 'registered',
     po_number: '',
     supplier_name: req.body.supplier_name || '',
     supplier_email: req.body.supplier_email || '',
@@ -378,8 +378,8 @@ app.post('/api/indents', requireAuth, async (req, res) => {
     tracking_url: '',
     documents: [],
     timeline: [{
-      status: 'indent_raised',
-      label: STATUS_LABELS['indent_raised'],
+      status: 'registered',
+      label: STATUS_LABELS['registered'],
       by: req.user.name || req.user.email,
       at: new Date().toISOString(),
       note: req.body.remarks || '',
