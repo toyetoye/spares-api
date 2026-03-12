@@ -1,0 +1,13 @@
+{
+  "name": "forcap-spares",
+  "version": "1.0.0",
+  "main": "spares-server.js",
+  "scripts": {
+    "start": "node spares-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "nodemailer": "^6.9.7"
+  }
+}
